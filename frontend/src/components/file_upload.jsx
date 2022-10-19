@@ -7,19 +7,23 @@ class FileUpload extends Component {
   };
 
     handleFile = (e) => {
-        let file = e.target.file[0];
+        let file = e.target.files[0];
+        console.log(file);
         this.setState({file: file});
     }
 
-    handleUpload = () => {
+    handleUpload = async () => {
         let file = this.state.file;
         let formData = new FormData();
 
-        formData.append('video', file);
+        formData.append('file', file, file.name);
         
-        const res = await axios.post('/uploads', formData).catch((err) => {
+        const res = await axios.post('/upload', formData).catch((err) => {
             console.log(err);
-        })
+        });
+        
+        console.log(res.data);
+       
     }
 
 
@@ -30,9 +34,9 @@ class FileUpload extends Component {
         <form>
           <div>
             <label>File Select</label>
-            <input type="file" name="file" onChange={(e) => this.handleFile(e)}></input>
+            <input type="file" name="file" onChange={this.handleFile}></input>
           </div>
-          <button type="button">Send File</button>
+          <button type="button" onClick={this.handleUpload}>Send File</button>
         </form>
       </div>
     );

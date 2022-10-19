@@ -1,12 +1,16 @@
 
-from flask import Flask, flash, request, json, jsonify  #Basis API Importe
+from asyncio.windows_events import NULL
+from flask import Flask, flash, request, json, jsonify, send_file, send_from_directory  #Basis API Importe
 from werkzeug.utils import secure_filename  #Import um das File auch richtig abzuspeichern
-import moviepy.editor as mp #Import um das Audio aus dem Video zu extrahieren
-import glob2 as glb #Import um zu pruefen, welches File das neuste ist
+from flask_cors import CORS #Inportiert CORS um Cross-Origin Resource Sharing zu erlauben
+from moviepy.editor import * #Import um das Audio aus dem Video zu extrahieren
+from pydub import AudioSegment
+import math
 import os #Um das File welches eintrift zu speichern
 
 #Einstieg in die API 
 app = Flask(__name__)
+CORS(app)
 
 
 ALLOWED_EXTENSIONS = set(['mp4', 'mov', 'wmv', 'avi', 'avchd', 'webm', 'flv', 'f4v']) #Liste der erlaubten Files
@@ -24,55 +28,43 @@ def main():
 
 #Funktion welche den Upload handled
 def upload():
-    #Wenn kein File gesendet wird
-    if 'files[]' not in request.files:
-        #Response Text wird gesetzt
-        resp = jsonify({'message' : 'No file found sucker'})
-        #Status Code wird gesetzt
-        resp.status_code = 400
-        #Response wird zurueck gegeben
-        return resp
-    #Files repraesentiert die gesendeten Files
-    files = request.files.getlist('files[]')
-    
-    #Error wird vorbereitet
-    errors = {}
-    #Je nach Ergebnis muss ein anderer Fall abgedekt werden dafuer gibt es einen Boolischen Wert zur ueberpruefung
-    success = False
-  
-    #Geht die alle gesendeten Files durch
-    for file in files:
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join('static/uploads', filename))  
-            getLatestFile()
-            success = True
-        else:
-            errors[file.filename] = 'file is not allowed'
-    
-    if success and errors:
-        errors['message'] = 'Files uploaded'
-        resp = jsonify(errors)
-        resp.status_code = 500
-        return resp
-    if success:
-        resp = jsonify({'message' : 'Files uploaded'})
-        resp.status_code = 201
+    file = request.files['file']
 
-        return resp
-    else: 
-        resp = jsonify(errors)
-        resp.status_code = 500
-        return resp
+    if file:
+
+        filename = secure_filename(file.filename)
+
+        file.save(os.path.join('static/uploads', filename))
+
+        vid = VideoFileClip('static/uploads/'+filename)
+        audio = vid.audio
+
+        defName = filename.split('.')[0]
+        audio.write_audiofile('mat/audio/'+defName+'.wav')
+
+
+
+        audio_file = AudioSegment.from_wav(open("mat/audio/"+defName+".wav", "rb"))
+        audio_file = audio_file.split_to_mono()
+        data = audio_file[0]._data
+        data_values = []
+
+        for sample_index in range(len(data) // 2):
+            sample = int.from_bytes(data[sample_index * 2: sample_index * 2 + 2], 'little', signed=True) 
+            data_values.append(sample)
+
+        sample_size = 70
+        
+
+        print (len(data_values))
+
+        return data_values
+    else:
+        return 'No file attached'
 
 #def extract_audio(file):
  #   clip = mp.VideoFileClip(file)
   #  clip.audio.write_audiofile('test.mp3')
-
-def getLatestFile():
-    list_of_files = glb.glob('static/uploads/*')
-    latest_file = max(list_of_files, key=os.path.getctime)
-    print(latest_file.split('\\')[1])
-
+  
 if __name__ == '__main__':
     app.run(debug=True)
