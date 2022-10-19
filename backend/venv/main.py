@@ -55,8 +55,19 @@ def upload():
 
         sample_size = 70
         
+        block_size = math.floor(len(data_values) / sample_size)
 
-        print (len(data_values))
+        half_filtered_data = []
+        filtered_data = []
+
+        for i in range(sample_size):
+            half_filtered_data.append(data_values[i * block_size])
+
+        for j in range(sample_size):
+            filtered_data.append(abs(half_filtered_data[j]))
+ 
+        print (len(filtered_data))
+        print (filtered_data)
 
         return data_values
     else:
