@@ -15,7 +15,7 @@ CORS(app)
 #Main Route um zu testen, ob die API ueberhaupt funktioniert
 @app.route('/')
 def main():
-    return 'penis'
+    return 'test'
 #Upload Route um das File auch hochzuladen
 @app.route('/upload', methods=['POST'])
 

@@ -8,14 +8,22 @@ import wave from "./wave.png"
 //Der State wird genutzt um Daten kurzfristig zu speichern und um diese an andere Komponenten weiter zu geben
 class FileUpload extends Component {
   state = {
-    file: null
+    file: null,
+    filename: null
   };
 
   //Hier wird der State auf das File gesetzt 
   handleFile = (e) => {
     let file = e.target.files[0];
+    let filename = file.name;
+
+    if(!filename.endsWith('.mp4')) {
+      alert('You can upload video files only.');
+      return;
+    }
+
     console.log(file);
-    this.setState({ file: file });
+    this.setState({ file: file, filename: filename});
   }
 
   //Wenn der Senden Button gedrueckt wird, wird ein File ueber Post an die API gesendet 
@@ -23,6 +31,7 @@ class FileUpload extends Component {
     let file = this.state.file;
     let formData = new FormData();
 
+    
     formData.append('file', file, file.name);
 
     const res = await axios.post('/upload', formData).catch((err) => {
@@ -30,7 +39,7 @@ class FileUpload extends Component {
     });
 
     console.log(res.data);
-    //Wenn die Response erhalten wurde wird die Kurve gezeichnet 
+    //Wenn die Response erhalten wurde wird die Kurve gezeichnet
     this.createCanvas(res.data);
   }
 
@@ -97,8 +106,10 @@ class FileUpload extends Component {
             <label htmlFor="file-upload" className="custom-file-upload">
               <i className="fa fa-cloud-upload"></i> Upload
             </label>
-            <input type="file" name="file" id="file-upload" onChange={this.handleFile}></input>
-            <button type="button" onClick={this.handleUpload} className="send">Send File</button>
+            <input type="file" name="file" id="file-upload" onChange={this.handleFile} accept="video/mp4,video/x-m4v,video/*"></input>
+            <p>{this.state.filename}</p>
+            { this.state.filename && <button type="button" onClick={this.handleUpload} className="send">Send File</button>}
+            { !this.state.filename && <p className="errorText">Did not upload the File</p>}
           </div>
         </form>
         <canvas id="canvas" className="canvas"></canvas>
